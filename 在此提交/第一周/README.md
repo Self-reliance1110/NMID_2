@@ -23,42 +23,44 @@
 * ```<b>:粗体```
 * ```<i>:斜体```
 ### 图片标签
-* <img src = ''/>
+* ```<img src = ''/>```
 * src:指定图片的位置
 * 相对路径：
     ./表示当前目录
     ../表示上一级目录
 ### 列表标签
 * 有序列表
+```
 <ol>
 <li>列表项</li>
 <li>列表项</li>
 </ol>
-
+```
 * 无序列表
+```
 <ul>
 <li>列表项</li>
 <li>列表项</li>
 </ul>
-
+```
 ### 超链接标签
-* <a href = ''></a>
+* ```<a href = ''></a>```
 * href:指定打开资源的url
 * target：指定打开资源的方式
 * 可以与img标签一起使用
 ### div和span
 ### 语义化标签
 为了增加程序的可读性
-* <header>
-* <footer>
+* ```<header>```
+* ```<footer>```
 ### 表格标签
-* <table></table>表格标签
-* <tr></tr>行标签
-* <th></th>表头标签
-* <td></td>单元格标签
-* <thead></thead>
-* <tbody></tbody>
-* <tfoot></tfoot>
+* ```<table></table>表格标签```
+* ```<tr></tr>行标签```
+* ```<th></th>表头标签```
+* ```<td></td>单元格标签```
+* ```<thead></thead>```
+* ```<tbody></tbody>```
+* ```<tfoot></tfoot>```
 * 合并单元格：colspan,rowspan
 ### 表单标签
 用于采集数据，与服务器进行数据交互
