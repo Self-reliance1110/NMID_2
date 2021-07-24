@@ -79,3 +79,207 @@
 </form>
 ```
 * 表单数据如果需要提交，必须要定义name属性
+* input：通过type属性的值可以有不同样式
+    * type 
+        * text
+        * password：密码输入框
+        * radio：单选框
+            * 单选框name需要一致
+            * 要设置value值
+            * checked设置默认值
+            * placeholder可以设置提示文字
+        * checkbox：复选框
+        * file
+        * date
+        * datelocal
+        * email
+        * number
+
+* select：下拉列表
+    * option
+* textarea:文本域
+
+# CSS：页面美化和布局控制
+## 内联样式
+```
+<div style="color: red">Hello</div>
+```
+## 内部样式
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>呵呵</title>
+    <style>
+        div{
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<div>Hello</div>
+
+</body>
+</html>
+```
+## 外部样式
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>呵呵</title>
+    <link rel="stylesheet" href="css/a.css">
+</head>
+<body>
+<div>Hello</div>
+</body>
+</html>
+<!-- a.css文件定义 -->
+div{
+    color: red;
+}
+```
+## CSS语法
+```
+选择器{
+    属性1：值1;
+    ...
+}
+```
+### 基础选择器
+* id选择器
+    * 语法：id{}
+* 元素选择器
+    * 语法：标签{}
+* 类选择器
+    * 语法：.class{}
+    * class是标签的一个属性
+# JavaScript：客户端脚本语言
+可以增强用户和html页面的交互过程
+## ECMAScript
+### 与html的结合方式
+```
+<script src="css/j.js" charset="GBK"></script>
+//-------------
+<script>
+        alert("Hello World");
+    </script>
+```
+### 数据类型
+* 原始数据类型
+    * number:数字
+    * String：字符串
+    * boolean
+    * null：空的占位符
+    * undefined：未定义的变量会被赋值为undefined
+* 引用类型
+
+### 变量
+JavaScript是一种弱类型的语言
+语法：var 变量名 = 值；
+* 变量的定义var关键字也可以不用
+* 用了var定义的是局部变量
+* 不用var关键字定义的变量是全局变量
+
+### 运算符
+* 一元运算符
+    * ++
+    * --
+* 算数运算符
+* 赋值运算符
+* 比较运算符
+    * === 全等于
+* 逻辑运算符
+* 三元运算符
+
+## 对象
+### Function
+* 创建方法：
+    1.
+    ```
+    function fun(a,b)
+        {
+            document.write(a+b);
+        }
+    ```
+    2.
+    ```
+    var fun = function(a,b)
+    {
+         document.write(a+b);
+    }
+    ```
+* length为形参个数
+* arguments是方法的内置对象，封装了所有实际参数，相当于一个数组
+```
+<script>
+        function fun()
+        {
+            var sum =0;
+            for (var i = 0; i < arguments.length; i++) {
+                sum+=arguments[i];
+            }
+
+            return sum;
+        }
+        var sum  =fun(1,2,3);
+        document.write(sum);
+    </script>
+```
+### Array数组对象
+* 创建方式：
+```
+    1.var arr = new Array(元素列表);
+    2.var arr = new Array(默认长度);
+    3.var arr = [元素列表];
+```
+* 特点
+    * JS中数组元素类型可变
+    * 长度是可变的
+### Date日期对象
+* 创建方式：
+```
+var date = new Date();
+```
+### Math数学对象
+* 创建：Math对象不用创建，直接Math.方法名();
+
+### RegExp：正则表达式对象
+定义字符串的组成规则
+* 单个字符：[]
+    * 如：[a],[ab]a或b,[a-zA-z0-9_]....
+    * 特殊符号代表特殊含义的字符
+        * \d:单个数字字符[0-9]
+        * \w:单个单词字符[a-zA-z0-9_]
+* 量词符号
+    * ?:出现0次或1次
+    * *:出现0次或多次
+    * +:出现1次或多次
+    * {m,n}:m <= 字符串长度 <= n;
+* 开始：^
+* 结束：$
+* 创建方法：
+    * 
+    ``` 
+    var reg = new RegExp("正则表达式")；
+    ```
+    * 
+     ``` 
+    var reg = \正则表达式\；
+    ```
+* 方法：对象.test(字符串)；用于校验
+### Global
+全局对象，不需要对象就可以调用方法
+* encodeURI()编码
+* decodeURI()解码
+* encodeURIComponetr()
+* decodeURIComponetr()
+* parseInt()将字符串转化为数字
+* eval()将字符串当作js脚本代码运行
+* isNaN()判断是否为NaN
+## BOM
+
+## DOM
+
