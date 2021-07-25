@@ -279,7 +279,48 @@ var date = new Date();
 * parseInt()将字符串转化为数字
 * eval()将字符串当作js脚本代码运行
 * isNaN()判断是否为NaN
-## BOM
+## BOM：Browser Object Model
+* Navigator:浏览器对象
+* Window：窗口对象
+    * window对象不需要创建就可以使用，也不用window.方法名();
+    * 方法：
+        * alert()
+        * confirm(),点击确定返回true，点击取消返回false
+        * prompt(),输入框，返回用户输入的内容
+        * open()打开新窗口
+        * close()关闭窗口
+    * 定时器
+        * setTimeout()	在指定的毫秒数后调用函数或计算表达式。
+            参数：
+            * 方法体
+            * 毫秒值
+        * clearTimeout(定时器对象)取消setTimeout()设置的计时
+        * setInterval()按周期执行代码
+        * clearInterval(定时器对象)
+    * 属性
+        * 获取其他BOM对象
+            *
+* Location:地址栏
+    * 获取
+        window.location
+    * 方法
+        * reload()
+        * href()
+* History:历史记录对象
+* Screen:显示器屏幕对象
 
-## DOM
+## DOM:Document Object Model 文档对象模型
+* 控制html文档的内容
+* 代码：获取页面标签(元素)对象Element
+    * document.getElementById("id")
+* 操作Element对象
+    * 修改属性值
+        * 明确对象是什么
+        * 查看文档寻找可以设置的属性值
+    * 修改标签体内容
 
+* Document
+* Element
+* Node
+## 事件
+某个组件被执行了某些操作，然后触发某些代码的执行
