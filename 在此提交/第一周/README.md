@@ -324,3 +324,210 @@ var date = new Date();
 * Node
 ## 事件
 某个组件被执行了某些操作，然后触发某些代码的执行
+
+# Tomcat：web服务器软件
+## 目录结构
+* bin：可执行文件
+* conf：配置文件
+* lib：依赖jar包
+* logs：日志文件
+* webapps：存放项目
+* work：存放运行时的数据
+## 启动
+在bin目录下点击startup.bat,不要关闭cmd窗口
+## 关闭
+* 强制关闭：关闭cmd窗口
+* 正常关闭：bin目录下运行shutdown文件
+## 配置
+* 部署项目方法1
+    * 直接将web项目放在webapps目录下
+    * 可以将项目打包成war包，然后将war包放在webapps目录下
+* 部署项目方法2
+    * 配置conf/server.xml文件，在Host标签体中配置<Context docBase = "" path = "/"/>
+    * docBase问项目存放目录
+    * path为虚拟目录
+* 部署项目方法3
+    * 在conf\Catalina\localhost目录下创建一个xml文件
+    * 在创建的xml文件内写<Context docBase = "" />
+    * 此时虚拟目录就是文件名
+* 动态项目
+    * 项目目录下有web-inf目录，下面有个web.xmlwen文件
+# Servlet：server applet运行在服务器端的小程序
+* Servlet就是一个接口
+* 使用方法
+    * 创建一个项目
+    * 定义一个类，实现Servlet接口
+    * 实现抽象方法
+    * 配置web.xml文件
+    ```
+    <web-app>
+    <display-name>Archetype Created Web Application</display-name>
+    <servlet>
+    <!--别名-->
+    <servlet-name>hello</servlet-name>
+    <!--类路径，由包名.类名组成-->
+    <servlet-class>servlet.ServletHello</servlet-class>
+    </servlet>
+    <servlet-mapping> <!--用来定义servlet所对应的url-->
+    <servlet-name>hello</servlet-name>
+    <url-pattern>/hello</url-pattern> <!--页面路由时路径 仅为hello时报错 也就是说，如果站点下只有一个web项目时，例如
+         http://localhost:8080/可以访问到index.jsp，则http://localhost:8080/hello可以映射访问到servlet.ServletHello
+         的实例化对象-->
+    </servlet-mapping>
+    </web-app>
+
+
+    ```
+## Servlet方法
+* init()在Servlet创建时执行唯一一次
+    * Servlet的创建时机
+        * 值为负整数在第一次被访问是调用init方法
+        * 为正整数在服务器启动时调用
+
+        ```
+        <servlet>
+        <!--别名-->
+        <servlet-name>hello</servlet-name>
+        <!--类路径，由包名.类名组成-->
+        <servlet-class>servlet.ServletHello</servlet-class>
+        <load-on-startup>值</load-on-startup>
+        </servlet>
+        ```
+
+* service()每次访问Servlet执行一次
+* destory()在服务器正常关闭是执行一次
+* getServletConfig：获取ServletConfig对象，配置对象 
+* getServletInfo：获取Servlet的信息
+
+## Servlet的注解：@WebServlet
+在定义的类上面注释@WebServlet(urlPatterns = "/demo01")
+或者@WebServlet("/demo01")
+
+## GenericServlet类
+将Servlet类的service方法做了抽象处理，其他方法做了默认处理
+
+## HttpServlet：对http协议的一种封装
+* 定义类继承HttpServlet
+* 复写doGet和doPost方法
+
+## Servlet的相关配置
+* 一个Servlet可以有多个urlpartten
+* 路径定义规则
+    * /xxx
+    * /xxx/xxx
+    * *.do
+# HTTP:Hyper Text Transfor Protocol超文本传输协议
+* 特点
+    * 基于TCP/IP的高级协议
+    * 默认端口是80
+    * 一次请求一次响应
+    * 每次请求相互独立，不能交互数据
+* 请求消息数据格式
+    * 请求行
+        * 请求方式 请求url 请求协议/版本
+          GET  /login.html  HTTP/1.1
+        * 常用的请求方式
+            * GET
+                * 请求参数在请求行中，在url后
+                * 请求的url长度有限制
+                * 不太安全
+            * POST
+                * 请求参数在请求体中
+                * url长度无限制
+                * 相对安全
+    * 请求头
+        请求头名称：请求头值
+        * 常见请求头
+            * User-agent：浏览器告诉服务器我的版本信息
+            * Referer：告诉服务器我从哪里来http://localhost/...
+                * 防盗链
+                * 
+    * 请求空行
+        空行
+    * 请求体
+        * 封装POST的参数
+
+* 响应消息数据格式
+
+## Request和Response对象
+原理：
+* tomcat会根据请求的url中的资源路径，创建对应的Servlet对象
+* 之后会创建request和response对象
+* 将这两个对象传递给service方法
+* 我们可以读取request的请求数据
+* 然后对response对象进行设置
+* 最后将response对象返回给浏览器
+
+### Request
+#### Request的继承关系
+* ServletRequest
+* HttpServletRequest
+* org.apache.catalina.connector.RequestFacade
+#### Request对象的功能
+* 获取请求消息的数据
+    * 获取请求行
+        * 获取请求方式：getMethod()
+        * **获取虚拟目录：getContextPath()**
+        * 获取Servlet路径：getServletPath()
+        * 获取请求参数:getQueryString()
+        * **获取URI：getRequestURI()返回/...**
+        * 获取URL：getRequestURL()返回http://localhost/...
+        * 获取协议及版本：getProtocol()
+        * 获取客户机的IP：getRemoteAddr()
+    * 获取请求头
+        * String getHeader(String name)根据请求头的名称获取请求头的值
+        * Enumeration<String> getHeaderNames()获取所有请求头的名称
+        ```
+        Enumeration<String> headerNames = request.getHeaderNames();
+
+        while(headerNames.hasMoreElements())
+        {
+            String name = headerNames.nextElement();
+            String value = request.getHeader(name);
+            System.out.println(name+":"+value);
+        }
+
+        //-----判断浏览器
+        String agent = request.getHeader("user-agent");
+        if(agent.contains("Chrome"))
+        {
+            System.out.println("谷歌浏览器");
+        }
+
+        ```
+    * 获取请求体：只有POST请求方式才有请求体
+        ```
+        BufferedReader reader = request.getReader();
+        String line = null;
+        while((line = reader.readLine())!=null)
+        System.out.println(line);
+        ```
+* 其他方法
+    * 获取请求参数通用方法
+        * getParameter(参数名),例如传username就会返回username的值
+        * getParameterValues(参数名)，获取参数值的数组
+        * Enumeration<String> getParameterNames()获取所有请求参数的name
+        * Map<String,String> getParameterMap()获取请求参数的键值对集合
+        * 中文乱码问题
+            * post会乱码，一句代码解决
+            ```
+            request.setCharacterEncoding("utf-8");
+             ```
+    * 请求转发：一种在服务器内部资源跳转的方式
+        步骤
+        * 通过request对象获取请求转发器对象 RequestDispatcher getRequestDispatcher(String Path);
+        * 使用RequestDispatcher对象来进行转发 forward(ServletRequest request, ServletResponse response)
+        特点
+        * 浏览器地址栏路径没有变化
+        * 只能转发到当前服务器里的资源文件
+        * 转发是一次请求
+
+    * 共享数据
+        * request域，代表一次请求的范围，一般用于请求转发的多个资源中共享数据
+        * setAttribute(String name,Object obj)存储数据
+        * getAttribute(String name)获取
+        * removeAttribute(String name)移除
+    * 获取ServletContext
+
+
+### Response
