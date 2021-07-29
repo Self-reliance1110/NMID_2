@@ -709,3 +709,9 @@ getRealPath()
     * 可以任意命名，放在任意文件夹
 * 获取数据库连接池对象：通过工厂类来获取，DruidDataSourceFactory
 * 获取连接：getConnection
+
+
+# 坑
+class类加载器加载文件，csdn已收藏详情
+mysql-connector-java和druid版本有对应关系，若不对应会报错
+BeanUtil可以快速封装对象
