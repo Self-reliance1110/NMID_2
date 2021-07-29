@@ -531,3 +531,181 @@ var date = new Date();
 
 
 ### Response
+* 响应行
+    1.组成：协议/版本 响应状态码 状态码描述
+    2.响应状态码：服务器告诉客户端浏览器本次请求和响应的一个状态
+        状态码都是数字
+        分类：
+            1.1xx：服务器接收客户端消息，但没有接收完成，等待一段时间后，发送1xx状态码
+            2.2xx：成功
+            3.3xx：302重定向，304访问缓存
+            4.4xx：客户端错误，404没有找到资源，405没有找到相应的doxxx
+            5.5xx：服务端错误，500服务器内部错误
+    * 设置状态码：setStatus(int sc)
+* 响应头
+    * Content-Type:数据格式及编码格式   
+    * Content-disposition:服务器告诉客户端以什么格式打开响应体
+        * 默认值：in-line在当前页面打开
+        * attachment;filename = xxx以附件形式打开，文件下载
+    * 设置头：setHeader(String name,String value)
+
+* 响应空行
+* 响应体
+    * 设置响应体：以流的方式
+        * 获取输出流
+            * 字符输出流：PrintWriter getWriter()
+                * 乱码问题：
+                ```
+                    response.setCharacterEncoding(“utf-8”);//
+                    response.setHeader("content-type","text/html;charset=utf-8");//告诉浏览器应该用什么方式解码
+                    //更简单的方式
+                    response.setContentType("text/html;charset=utf-8");
+                ```
+            * 字节输出流:ServletOutputStream getOutputStream()
+                ```
+                ServletOutputStream os = response.getOutputStream();
+                os.write("你好hello".getBytes());
+                ```
+
+
+* 重定向
+```
+        response.setStatus(302);
+        response.setHeader("location","/ResponseTest//ServletResponseTest2");
+        //更简单的方式，专门跳转的方法
+        response.sendRedirect("/ResponseTest/ServletResponseTest2");
+
+```
+特点：
+    1.地址栏会发生变化
+    2.重定向可以访问其他站点的资源
+    3.重定向是两次请求
+
+
+### 路径的写法
+#### 相对路径
+* ./index.html
+* 不以/开头
+* 规则：找到当前资源与目标资源的相对位置关系
+#### 绝对路径
+* 如http://localhost/ResponseTest/ServletResponseTest2 
+ /ResponseTest/ServletResponseTest2
+* 以/开头的路径
+* 规则：判断给谁用
+    * 给客户端浏览器用就需要加虚拟目录
+    * 给服务器用就不用加虚拟目录
+
+### 验证码
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        window.onload = function ()
+        {
+            var image = document.getElementById("checkcode");
+            image.onclick = function () {
+                var date = new Date().getTime();
+                image.src = "/ResponseTest/ServletResponseTest3?"+date;
+            }
+        }
+
+    </script>
+</head>
+<body>
+<img id = "checkcode" src="/ResponseTest/ServletResponseTest3">
+<a href="ServletResponseTest2"> ....</a>
+</body>
+</html>
+
+package com.example.ReponseTest;
+
+import javax.imageio.ImageIO;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Random;
+
+@WebServlet(name = "ServletResponseTest3", value = "/ServletResponseTest3")
+public class ServletResponseTest3 extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+
+        int width = 100;
+        int height = 50;
+        BufferedImage image = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+
+        ServletOutputStream os = response.getOutputStream();
+        Graphics g = image.getGraphics();//获取画笔对象
+        g.setColor(Color.pink);//设置画笔颜色
+        g.fillRect(0,0,width,height);//填充
+
+        g.setColor(Color.BLUE);
+        g.drawRect(0,0,width-1,height-1);//边框
+        Random random = new Random();
+        String str= "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstyvwxyz0123456789";
+        for (int i = 1; i <=4; i++) {//获取随机字符
+
+            int j = random.nextInt(str.length());
+            g.drawString(str.charAt(j)+"",width/5*i,25);
+        }
+        g.setColor(Color.GREEN);
+        for (int i = 0; i < 8; i++) {
+            int x1 = random.nextInt(width);
+            int x2 = random.nextInt(width);
+            int y1 = random.nextInt(height);
+            int y2 = random.nextInt(height);
+            g.drawLine(x1,y1,x2,y2);
+        }
+        ImageIO.write(image,"jpg",os);
+
+
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        System.out.println("欢迎访问test1");
+        response.setStatus(302);
+        response.setHeader("location","/ResponseTest//ServletResponseTest2");
+        response.sendRedirect("/ResponseTest/ServletResponseTest2");
+    }
+}
+
+```
+
+## ServletContext对象：代表整个web应用，可以与服务器进行通信
+### 获取方法
+request.getServletContext()或this.getServletContext()
+
+### 获取MIME类型
+* MIME类型是在互联网通信过程中定义的一种文件数据类型
+    * 格式：大类型/小类型
+    * 获取：ServletContext对象.getMimeType(String file)
+### 域对象：共享数据,所有用户都能用
+serAttribute，getAttribute,removeAttribute
+### 获取文件真实路径
+getRealPath()
+* web目录下 /a.txt
+* src目录下 /WEB-INF/classes/a.txt
+* WEB-INF目录下 /Web-INF/a.txt
+
+
+# Druid数据库连接池回顾
+## 步骤
+* 导入jar包:druid,mysql-connector-java
+* 定义配置文件
+    * 是properties文件
+    * 可以任意命名，放在任意文件夹
+* 获取数据库连接池对象：通过工厂类来获取，DruidDataSourceFactory
+* 获取连接：getConnection
