@@ -344,3 +344,325 @@ public class SpringJUnitTest {
 }
 ```
 以后测试就只需要在该类中添加测试方法和注入测试对象即可
+
+## Spring与web环境的集成
+在Web项目中，可以使用ServletContextListener监听Web应用的启动，我们可以在Web应用启动时，就加载Spring的配置文件，创建应用上下文对象Application，再将其存储在最大的域ServletContext中，这样就可以在任意位置从域中应用上下文的ApplicationContext对象了
+
+* 创建监听器类
+```
+public class ContextListenerLoader implements ServletContextListener {
+    public void contextInitialized(ServletContextEvent sce) {
+        ApplicationContext app = new AnnotationConfigApplicationContext(SpringConfiguration.class);
+        ServletContext servletContext = sce.getServletContext();
+        servletContext.setAttribute("app",app);
+        System.out.println("监听器初始化成功");
+    }
+
+    public void contextDestroyed(ServletContextEvent sce) {
+    }
+
+}
+```
+* 在web.xml文件中配置监听器
+```
+    <listener>
+        <listener-class>com.example.AnnotaionContext.listener.ContextListenerLoader</listener-class>
+    </listener>
+```
+
+* 在Servlet中调用
+```
+ApplicationContext app = (ApplicationContext)this.getServletContext().getAttribute("app");
+        UserDao userDao = (UserDao)app.getBean("userDao");
+        userDao.save();
+```
+
+
+* 可以利用SevletContext的getInitParameter方法获取web.xml文件中的全局初始化参数降低耦合度
+
+```
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>配置文件地址</param-value>
+    </context-param>
+
+
+ServletContext servletContext = sce.getServletContext();
+ApplicationContext app = new ContextPathXmlApplicationContext(servletContext.getInitParameter(contextConfigLocation));
+        
+
+```
+这样就可以在配置文件中规定spring配置文件的文件名
+### Spring-web工具类
+上述功能Spring已经封装好了，在spring-web jar包下
+所以我们利用Spring提供的工具，步骤为
+* 添加spring-web坐标，在web.xml文件中配置ContextLoderListener监听器
+* 使用WebApplicationContextUtils获得上下文对象ApplicationContext
+* web.xml配置
+```
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:applicationContext.xml</param-value>
+    </context-param>
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+```
+* 该工具类大致实现方法,不需要自己实现
+```
+ServletContext servletContext = sce.getServletContext();
+        String contextConfiguration =  servletContext.getInitParameter("contextConfiguration");
+        ApplicationContext app = new ClassPathXmlApplicationContext(contextConfiguration);
+        servletContext.setAttribute("app",app);
+```
+* 调用方法
+```
+ServletContext servletContext = this.getServletContext();
+        ApplicationContext app = WebApplicationContextUtils.getWebApplicationContext(servletContext);
+        UserDao userDao = (UserDao)app.getBean("userDao");
+        userDao.save();
+```
+
+# SpringMVC
+开发步骤：
+* 导入SpringMVC相关坐标
+* 配置SpringMVC核心控制器DispacherServlet
+    在web.xml文件中进行配置
+    ```
+    <servlet>
+        <servlet-name>DispatcherServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:spring-mvc.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DispatcherServlet</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+    ```
+* 创建Controller和和视图页面
+```
+@Controller
+public class UserController {
+    @RequestMapping("/quick")
+    public String save()
+    {
+        System.out.println("Controller save running...");
+
+        return "success.jsp";
+    }
+}
+```
+视图页面就是方法返回的jsp文件名对应的jsp文件
+* 使用注解配置Controller类中业务方法的映射地址
+```
+@RequestMapping("/quick")
+```
+* 配置SpringMVC核心文件spring-mvc.xml,进行Controller的组件扫描
+```
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+<!--    Controller组件扫描-->
+        <context:component-scan base-package="com.example.AnnotaionContext.controller"/>
+
+</beans>
+```
+
+* 客户端发起请求测试
+
+## Spring的组件
+### Spring注解解析
+* @RequestMapping
+    * 作用:用于建立请求URL和处理请求方法之间的对应关系
+    * 位置: 
+        * 类上, 请求URL的第一级访问目录。 此处不写的话，就相当于应用的根目录
+        * 方法上,请求URL的第二级访问目录, 与类上的使用@ReqquestMapping标注的一级目录起组成访问虚拟路径
+    * 属性:
+        * value:用于指定请求的URL。它和path属性的作用是一样的
+       * method:用于指定请求的方式
+       * params:用于指定限制请求参数的条件。它支持简单的表达式。要求请求参数的key和value必须和配置的一模-样
+```
+@RequestMapping(value="/quick" method = RequestMethod.GET params = {"username"})
+
+
+params = {"username"}意思是请求参数必须要有username
+params = {"username!xxx"}意思是username值不等于xxx
+```
+* 组件扫描,还能过滤
+```
+<context:component-scan base-package="com.example.AnnotaionContext.controller">
+                <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        </context:component-scan>
+```
+* SpringMVC配置xml解析
+    * 配置视图解析器
+    ```
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+                <property name="prefix" value="/jsp/"></property>
+                <property name="suffix" value=".jsp"></property>
+        </bean>
+    ```
+    这样Controller里的方法只需要返回一个文件名就行了，会自动拼接成/jsp/xxx.jsp
+
+## SpringMVC的数据响应
+1.页面跳转
+* 直接返回字符串
+    * 此种方法会将返回的字符串与视图解析器的前后缀拼接后跳转
+    ```
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+                <property name="prefix" value="/jsp/"></property>
+                <property name="suffix" value=".jsp"></property>
+    </bean>
+
+
+    @RequestMapping("/quick")
+    public String save()
+    {
+        System.out.println("Controller save running...");
+
+        return "success";
+    }
+    ```
+* 返回ModelAndView对象
+```
+@RequestMapping("/quick2")
+    public ModelAndView test2()
+    {
+
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.addObject("hello","Hello");
+        modelAndView.setViewName("success");
+        return modelAndView;
+    }
+
+
+@RequestMapping("/quick3")
+    public ModelAndView test3(ModelAndView modelAndView)
+    {
+        
+        modelAndView.addObject("hello","Hello");
+        modelAndView.setViewName("success");
+        return modelAndView;
+    }
+```
+2.回写数据
+* 直接返回字符串
+    * 通过SpringMVC框架注入的response对象，使用response.getWriter0.print( "helloworld" )回写数据，此时不需要视图跳转,业务方法返回值为void。
+    ```
+    @RequestMapping("/quick4")
+    public void test4(HttpServletResponse response) throws IOException {
+        PrintWriter writer = response.getWriter();
+        writer.write("hello");
+    }
+    ```
+
+    * 将需要回写的字符串直接返回，但此时需要通过@ResponseBody注解告知SpringMVC框架，方法。返回的字符串不是跳转是直接在http响应体中返回。
+    ```
+    @RequestMapping("/quick5")
+    @ResponseBody
+    public String test5()  {
+        return "hello";
+    }
+    ```
+
+* 返回对象或集合
+    * 在spring-mvc.xml文件配置
+    ```
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+                <property name="messageConverters">
+                        <list>
+                                <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"/>
+                        </list>
+                </property>
+        </bean>
+    ```
+    使得SpringMVC框架可以将对象或集合直接转换成json格式的字符串然后返回
+    ```
+    @RequestMapping("/quick6")
+    @ResponseBody
+    public User test6() throws JsonProcessingException {
+        User user = new User("张三",18);
+        return user;
+    }
+    ```
+    页面上出现内容如下
+    ```
+    {"username":"张三","age":18}
+    ```
+    * 在方法.上添加@ResponseBody就可以返回jison格式的字符串，但是这样配置比较麻烦，配置的代码比较多，因此，我们可以使用mvc的注解驱动代替上述配置。
+
+    在SpringMVC的各个组件中,处理器映射器、处理器适配器、视图解析器称为SpringMVC的三大组件。使用```<mvc:annotation-driven/>```自动加载RequestMappingHandlerMapping (处理映射器)和RequestMappingHandlerAdapter (处理适配器)，可用在Spring-xml.xmI配置文件中使用```<mvc:annotation-driven/>```替代注解处理器和适配器的配置。同时使用```<mvc:annotation-driven/>```默认底层就会集成jackson进行对象或集合的json格式字符串的转换。
+
+## SpringMVC获得请求数据
+
+客户端请求参数的格式是: name=value&name=value...
+服务器端要获得请求的参数,有时还需要进行数据的封装，SpringMVC 可以接收如下类型的参数:
+* 基本类型参数
+* POJO类型参数，简单JavaBean
+* 数组类型参数
+* 集合类型参数
+
+### 获得基本类型参数
+Controller中的业务方法的参数名称要与请求参数的name-致,参数值会自动映射匹配。
+
+
+http://localhost/quick7?username=zhangsan&age=18，这样就可以自动匹配了
+```
+    @RequestMapping("/quick7")
+    @ResponseBody
+    public void test7(String username,int age)
+    {
+        System.out.println(username);
+        System.out.println(age);
+    }
+    
+```
+
+### 获得POJO类型参数
+访问http://localhost/quick8?username=zhangsan&age=18，可以自动封装User对象
+```
+@RequestMapping("/quick8")
+    @ResponseBody
+    public void test8(User user)
+    {
+        System.out.println(user);
+
+    }
+```
+
+### 获得数组类型参数
+Controller中的业务方法数组名称与请求参数的name-致, 参数值会自动映射匹配。
+访问http://localhost/quick9?strs=111&strs=222&strs=333
+```
+ @RequestMapping("/quick9")
+    @ResponseBody
+    public void test9(String[] strs)
+    {
+        System.out.println(Arrays.asList(strs));
+
+    }
+```
+
+### 获得集合类型封装
+* 获得集合参数时，要将集合参数包装到一个POJO中才可以。
+
+    * 写个页面
+        ```
+        
+
+        ```
+        * ${pageContext.request.contextPath}是JSP取得绝对路径的方法，等价于<%=request.getContextPath()%> 。也就是取出部署的应用程序名或者是当前的项目名称。比如我的项目名称是demo1在浏览器中输入为http://localhost:8080/demo1/a.jsp ${pageContext.request.contextPath}或<%=request.getContextPath()%>取出来的就是/demo1,而"/"代表的含义就是http://localhost:8080。故有时候项目中这样写${pageContext.request.contextPath}/a.jsp
