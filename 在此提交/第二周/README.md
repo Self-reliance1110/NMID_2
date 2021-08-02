@@ -662,7 +662,100 @@ Controller中的业务方法数组名称与请求参数的name-致, 参数值会
 
     * 写个页面
         ```
-        
+        <form action="${pageContext.request.contextPath}/quick11" method="post">
+            <input type="text" name="userList[0].username"><br>
+            <input type="text" name="userList[0].age"><br>
+            <input type="text" name="userList[1].username"><br>
+            <input type="text" name="userList[1].age"><br>
+            <input type="submit" value="提交">
+        </form>
 
         ```
         * ${pageContext.request.contextPath}是JSP取得绝对路径的方法，等价于<%=request.getContextPath()%> 。也就是取出部署的应用程序名或者是当前的项目名称。比如我的项目名称是demo1在浏览器中输入为http://localhost:8080/demo1/a.jsp ${pageContext.request.contextPath}或<%=request.getContextPath()%>取出来的就是/demo1,而"/"代表的含义就是http://localhost:8080。故有时候项目中这样写${pageContext.request.contextPath}/a.jsp
+    
+    * Controller代码
+    ```
+    @RequestMapping("/quick11")
+    @ResponseBody
+    public void test11(VO vo)
+    {
+        System.out.println(Arrays.asList(vo.getUserList()));
+    }
+    ```
+    * VO类代码
+    ```
+    public class VO {
+        private List<User> userList;
+        //....set，get，toString方法省略
+    }
+
+    ```
+* 当使用ajax提交时，可以指定contentType为json形式， 那么在方法参数位置使用  @RequestBody可以直接接收集合数据而无需使用POJO进行包装。
+
+没学jquery，先跳过....
+
+### 静态资源的访问开启
+
+```
+
+        <mvc:resources mapping="/img/**" location="/img/"/>
+        mapping="/img/**" 是访问地址中含有这个
+        location="/img/" 是资源的真实目录
+
+```
+或者
+```
+        <mvc:default-servlet-handler/>
+        代表是如果找不到文件就交给tomcat处理
+```
+
+### 请求数据的乱码问题
+get请求服务器会自己解决
+当post请求时，数据会出现乱码,我们可以设置一个过滤器来进行编码的过滤。
+在web.xml文件配置一个全局过滤器
+```
+    <filter>
+        <filter-name>CharacterEncodingFilter</filter-name>
+        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>CharacterEncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+```
+### 参数绑定注解@requestParam
+当请求的参数名称与Controller的业务方法参数名称不一致时,就需要通过@RequestParam注解显示的绑定。
+```
+@RequestMapping("/quick12")
+    @ResponseBody
+    public void test12(@RequestParam("name") String username)
+    {
+        System.out.println(username);
+    }
+```
+注解@RequestParam还有如下参数可以使用:
+* value:与请求参数名称
+* required:此在指定的请求参数是否必须包括，默认是true,提交时如果没有此参数则报错
+* defaultValue:当没有指定请求参数时，则使用指定的默认值赋值
+
+### 获得Restful风格的参数
+Restful是一种软件架构风格、 设计风格，而不是标准，只是提供了-组设计原则和约束条件。主要用于客户端和服务器交互类的软件，基于这个风格设计的软件可以更简洁，更有层次，更易于实现缓存机制等。
+Restful风格的请求是使用“url+请求方式”示次请求目的的，HTTP协议里面四个表示操作方式的动词如下:
+* GET:用于获取资源
+* POST:用于新建资源
+* PUT:用于更新资源
+* DELETE:用于删除资源
+
+例如:
+* /user/1 GET : 得到id=1的user
+* /user/1 DELETE: 删除id= 1的user
+* /user/1 PUT: 更新id=1的user
+* /userPOST: 新增user
+
+上述ur|地址/user/1中的1 就是要获得的请求参数，在SprpgMVC中可以使用 占位符进行参数绑定。地址/user/1可以写成/user/id},占位符{id}对应的就是1的值。在业务方法中我们可以使用@PathVariable注解进行 占位符的匹配获取工作。
+
+
