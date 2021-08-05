@@ -423,6 +423,136 @@ ServletContext servletContext = this.getServletContext();
         userDao.save();
 ```
 
+## SpringAOP
+AOP为Aspect Oriented Programming的缩写,意思为面向切面编程,是通过预编译方式和运行期动态代理实现程序功能的统一维护的一种技术。
+### AOP的底层实现
+实际上，AOP的底层是通过Spring提供的的动态代理技术实现的。在运行期间，Spring通过动态代理技术动态的生成代理对象，代理对象方法执行时进行增强功能的介入，在去调用目标对象的方法,从而完成功能的增强。
+### AOP的动态代理技术
+常用的动态代理技术
+* JDK代理:基于接口的动态代理技术
+* cglib代理:基于父类的动态代理技术
+
+### JDK的动态代理
+底层代码：
+```
+public static void main(String[] args) {
+
+
+        final Target target = new Target();
+        Advice advice = new Advice();
+        TargetInterface proxy = (TargetInterface) Proxy.newProxyInstance(target.getClass().getClassLoader(),
+                target.getClass().getInterfaces(),
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        advice.before();//前置增强
+                        method.invoke(target,args);//执行目标方法
+                        advice.after();//后置增强
+                        return null;
+                    }
+                });
+        //调用代理对象的方法
+        proxy.save();
+    }
+```
+### cglib动态代理
+底层代码
+```
+public static void main(String[] args) {
+
+        final Target target = new Target();//目标对象
+        final Advice advice = new Advice();//增强对象
+
+
+        //1.创建增强器
+        Enhancer enhancer = new Enhancer();
+        //2.设置父类
+        enhancer.setSuperclass(Target.class);
+        //3.设置回调
+        enhancer.setCallback(new MethodInterceptor() {
+            @Override
+            public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+                //执行前置
+                advice.before();
+                //执行目标
+                Object invoke = method.invoke(target, args);
+                //执行后置
+                advice.after();
+                return invoke;
+            }
+        });
+        //4. 创建代理对象
+        Target proxy = (Target) enhancer.create();
+        proxy.save();
+    }
+```
+### AOP相关概念
+Spring的AOP实现底层就是对上面的动态代理的代码进行了封装，封装后我们只需要对需要关注的部分进行代码编写,并通过配置的方式完成指定目标的方法增强。
+常用相关术语
+Target (目标对象) :代理的目标对象
+Proxy (代理) :一个类被AOP织入增强后，就产生-个结果代理类
+Joinpoint (连接点) :所谓连接点是指那些被拦截到的点。在spring中,这些点指的是方法，因为spring只支持方法类型的连接点，即可以被增强的方法
+Pointcut (切入点) :所谓切入点是指我们要对哪些Joinpoint进行拦截的定义，即真的被增强的方法
+Advice (通知/增强) :所谓通知是指拦截到Joinpoint之后所要做的事情就是通知，即增强方法
+Aspect (切面) :是切入点和通知(引介)的结合
+Weaving (织入) : 是指把增强应用到目标对象来创建新的代理对象的过程。spring采用动态代理织入,而Aspect采用编译期织入和类装载期织入，即切入点和通知(引介)的结合的过程
+
+### AOP开发明确的事项
+1.需要编写的内容
+* 编写核心业务代码( 目标类的目标方法)
+* 编写切面类， 切面类中有通知(增强功能方法)
+* 在配置文件中，配置织入关系,即将哪些通知与哪些连接点进行结合
+* AOP底层使用哪种代理方式：在spring中,框架会根据目标类是否实现了接口来决定采用哪种动态代理的方式。
+
+### AOP开发步骤
+* 导入AOP相关坐标:spring-context,aspectjweaver
+* 创建目标接口和目标类(内部有切点)
+* 创建切面类(内部有增强方法)
+* 将目标类和切面类的对象创建权交给spring
+```
+<bean id="target" class="com.example.AnnotaionContext.AOP.Target"/>
+<bean id="aspect" class="com.example.AnnotaionContext.AOP.Advice"/>
+```
+* 在applicationContext.xml中配置织入关系
+```
+<bean id="target" class="com.example.AnnotaionContext.AOP.Target"/>
+
+<bean id="Aspect" class="com.example.AnnotaionContext.AOP.Advice"/>
+
+<aop:config>
+    <aop:aspect ref="Aspect">
+        <aop:before method="before" pointcut="execution(public void com.example.AnnotaionContext.AOP.Target.save())"/>
+    </aop:aspect>
+</aop:config>
+```
+### XML配置AOP详解
+1.切点表达式的写法
+* 表达式语法:execution([修饰符]返回值类型包名.类名.方法名(参数))
+* 访问修饰符可以省略
+* 返回值类型、包名、类名、方法名可以使用星号*代表任意
+* 包名与类名之间一一个点.代表当前包下的类,两个点..示当前包及其子包下的类
+* 参数列表可以使用两个点..表示任意个数,任意类型的参数列表
+2.通知的类型
+通知的配置语法:
+* <aop:通知类型 method = "切面类中方法名" pointcut= "切点表达式"> </aop:通知类型>
+* 前置通知<aop:before>用于配置前置通知。指定增强的方法在切入点方法之前执行
+* 后置通知<aop:after-returning>用于配置后置通知。指定增强的方法在切入点方法之后执行
+* 环绕通知<aop:around>用于配置环绕通知。指定增强的方法在切入点方法之前和之后都
+执行
+* 异常抛出通知<aop:throwing>用于配置异常抛出通知。指定增强的方法在出现异常时执行
+* 最终通知<aop:after>用于配置最终通知。无论增强方式执行是否有异常都会执行
+3.切点表达式可以抽取，百度搜
+
+### 基于注解的AOP开发
+1.创建目标接口和目标类(内部有切点)
+* @Aspect
+2.创建切面类(内部有增强方法)
+3.将目标类和切面类的对象创建权交给spring
+4.在切面类中使用注解配置织入关系
+5.在配置文件中开启组件扫描和AOP的自动代理
+
+
+
 # SpringMVC
 开发步骤：
 * 导入SpringMVC相关坐标
@@ -484,8 +614,8 @@ public class UserController {
 
 * 客户端发起请求测试
 
-## Spring的组件
-### Spring注解解析
+## SpringMVC的组件
+### SpringMVC注解解析
 * @RequestMapping
     * 作用:用于建立请求URL和处理请求方法之间的对应关系
     * 位置: 
@@ -758,4 +888,240 @@ Restful风格的请求是使用“url+请求方式”示次请求目的的，HTT
 
 上述ur|地址/user/1中的1 就是要获得的请求参数，在SprpgMVC中可以使用 占位符进行参数绑定。地址/user/1可以写成/user/id},占位符{id}对应的就是1的值。在业务方法中我们可以使用@PathVariable注解进行 占位符的匹配获取工作。
 
+```http://localhost/quick13/zhangsan```
+```
+    @RequestMapping("/quick13/{username}")
+    @ResponseBody
+    public void test13(@PathVariable(value = "username") String username)
+    {
+        System.out.println(username);
+    }
+```
 
+### 自定义类型转换器
+* SpringMVC 默认已经提供了一些常用的类型转换器， 例如客户端提交的字符串转换成int型进行参数设置。
+* 但是不是所有的数据类型都提供了转换器,没有提供的就需要自定义转换器，例如:日期类型的数据就需要自定义转换器。
+
+自定义类型转换器的开发步骤:
+* 定义转换器类实现Converter接口
+* 在配置文件中声明转换器
+* 在<annotation-driven> 中引用转换器
+
+### 获得Servlet相关API
+SpringMVC支持使用原始ServletAPI对象作为控制器方法的参数进行注入，常用的对象如下:
+* HttpServletRequest
+* HttpServletResponse
+* HttpSession
+```
+@RequestMapping("/quick15")
+    @ResponseBody
+    public void test15(HttpServletRequest request,HttpServletResponse response)
+    {
+        System.out.println(request);
+        System.out.println(response);
+    }
+```
+
+### 获取请求头
+* 使用@RequestHeader可以获得请求头信息，相当于web阶段学习的request.getHeader(name)
+    @RequestHeader注解的属性如下:
+    * value:请求头的名称
+    * required: 是否必须携带此请求头
+    ```
+
+    @RequestMapping("/quick16")
+    @ResponseBody
+    public void test16(@RequestHeader(value = "User-Agent")String agent)
+    {
+        System.out.println(agent);
+
+    }
+    ```
+* 使用@CookieValue可以获得指定Cookie的值
+    @CookieValue注解的属性如下: 
+    * value:指定cookie的名称
+    * required:是否必须携带此cookie
+
+### 文件上传
+1.文件上传客户端三要素
+* 表单项type= "file"
+* 表单的提交方式是post
+* 表单的enctype属性是多部分表单形式，即enctype = "multipart/form-data”
+
+2.文件上传原理
+* 当form表单修改为多部分表单时，request.getParameter()将失效。
+* enctype= "application/x-www-form-urlencoded" 时，form表单的正文内容格式是:
+key=value&key=value&key=value
+* 当form表单的enctype取值为Mutilpart/form-data时，请求正文内容就变成多部分形式
+
+### 单文件上传步骤
+* 导入fileupload和io坐标
+```
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.2</version>
+        </dependency>
+```
+* 配置文件上传解析器，spring-mvc.xml
+```
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+                <property name="defaultEncoding" value="UTF-8"></property>
+<!--                上传单个文件的大小-->
+                <property name="maxInMemorySize" value="500000"></property>
+</bean>
+```
+
+* 编写文件上传代码
+```
+@RequestMapping("/quick17")
+    @ResponseBody
+    public void test17(String username, MultipartFile upload) throws IOException {
+        String originalFilename = upload.getOriginalFilename();
+        upload.transferTo(new File("D:\\upload\\"+originalFilename));
+
+    }
+```
+### 多文件上传
+多文件上传，只需要将页面修改为多个文件上传项，将方法参数MultipartFile类型修改为MultipartFile[]即可
+
+
+## SpringMVC拦截器
+### 拦截器(interceptor) 的作用
+Spring MVC的拦截器类似于Servlet开发中的过滤器Filter,用于对处理器进行预处理和后处理。
+将拦截器按一定的顺序联结成一条链, 这条链称为拦截器链(Interceptor Chain)。在访问被拦截的方法或字段时，拦截器链中的拦截器就会按其之前定义的顺序被调用。拦截器也是AOP思想的具体实现。
+
+### 步骤
+1.创建拦截器类实现HandlerInterceptor接口
+```
+public class MyInterceptor implements HandlerInterceptor {
+    //在目标方法执行前执行,返回true放行，返回false后边的都不执行
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("preHandle");
+        return true;
+    }
+
+    //在目标方法执行后执行，在视图对象返回之前执行
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+
+        System.out.println("postHandle");
+    }
+
+    //在整个流程执行完毕后执行
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+
+        System.out.println("afterCompletion");
+    }
+}
+```
+2.配置拦截器
+```
+<mvc:interceptors>
+        <mvc:interceptor>
+                <mvc:mapping path="/**"/>
+                <bean class="com.example.AnnotaionContext.interceptor.MyInterceptor"/>
+        </mvc:interceptor>
+</mvc:interceptors>
+```
+
+## SpringMVC的异常处理
+系统中异常包括两类:预期异常和运行时异常RuntimeException,前者通过捕获异常从而获取异常信息，后者主要通过规范代码开发、测试等手段减少运行时异常的发生。
+系统的Dao、Service、 Controller出现都通过throws Exception向.上抛出,最后由SpringMVC前端控制器交由异常处理器(HandlerExceptionResolver)进行异常处理
+
+### 异常处理两种方式
+* 使用Spring MVC提供的简单异常处理器SimpleMappingExceptionResolver
+    * SpringMVC已经定义好了该类型转换器，在使用时可以根据项目情况进行相应异常与视图的映射配置
+    ```
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+<!--                默认错误页面，因为配置了视图解析器，就不用加前后缀-->
+                <property name="defaultErrorView" value="defaultError"/>
+                <property name="exceptionMappings">
+                        <map>
+                                <entry key="异常类" value="错误页面"></entry>
+                        </map>
+                </property>
+        </bean>
+    ```
+
+* 实现Spring的异常处理接口HandlerExceptionResolver自定义自己的异常处理器
+    * 创建异常处理器类实现HandlerExceptionResolver
+    * 配置异常处理器
+    ```
+    <bean class="自定义异常处理类"/>
+    ```
+    * 编写异常页面
+
+
+
+
+
+
+# JdbcTemplate基本使用
+## JdbcTemplate开发步骤
+1. 导入spring-jdbc和spring-tx坐标
+2. 创建数据库表和实体
+3. 创建JdbcTemplate对象
+4. 执行数据库操作
+
+## JdbcTemplate常规操作
+* 更新操作:jdbcTemplate.update (sql, params)
+* 查询操作:
+jdbcTemplate.query(sq1,Mapper,params)
+jdbcTemplate.queryForobject(sq1,Mapper,params)
+
+
+# Spring的事务控制
+## 事务传播行为
+* REQUIRED:如果当前没有事务,就新建一个事务, 如果已经存在一个事务中， 加入到这个事务中。一般的选择(默认值)
+* SUPPORTS:支持当前事务,如果当前没有事务,就以非事务方式执行(没有事务)
+* MANDATORY:使用当前的事務,如果当前没有事务,就抛出异常
+* REQUERS_NEV:新建事务,如果当前在事务中，把当前事务挂起。
+* NOT_SUPPORTED:以非事务方式执行操作,如果当前存在事务，就把当前事务挂起
+* NEVER:以非事务方式运行，如果当前存在事務，抛出异常
+* NESTED:如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行REQUIRED类似的操作
+* 超时时间:默认值是-1,没有超时限制。如果有，以秒为单位进行设置
+* 是否只读:建议查询时设置为只读
+
+### 基于XML的声明式事务控制
+1. 什么是声明式事务控制
+Spring的声明式事务顾名思义就是采用声明的方式来处理事务。这里所说的声明，就是指在配置文件中声明用在Spring配置文件中声明式的处理事务来代替代码式的处理事务。
+2. 声明式事务处理的作用
+* 事务管理不侵入开发的组件。 具体来说，业务逻辑对象就不会意识到正在事务管理之中，事实上也应该如此，因为事务管理是属于系统层面的服务,而不是业务逻辑的一部分,如果想要改变事务管理策划的话,也只需要在定义文件中重新配置即可
+* 在不需要事务管理的时候，只要在设定文件上修改一下, 即可移去事务管理服务,无需改变代码重新编译，这样维护起来极其方便
+
+
+### 步骤
+1. 需要tx命名空间
+2. ```<!--    jdbc my什么东东都用这个类-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+<!--    事务的增强-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="事务方法" 事务属性.../>
+        </tx:attributes>
+    </tx:advice>
+<!--    配置事务的织入-->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice" pointcut=""></aop:advisor>
+    </aop:config>```
+    其中，<tx:method> 代表切点方法的事务参数的配置,例如:
+    <tx :method name= =" transfer" isolation="REPEATABLE_ READ ”propagation="REQUIRED" timeout= "-1”
+    read-only="false"/>
+    ●name:切点方法名称
+    ●isolation:事务的隔离级别
+    ●propogation: 事务的传播行为
+    ●timeout; 超时时间
+    ●read-only:是否只读
+### 基于注解的声明式事务控制
+@Transactional(属性...)
