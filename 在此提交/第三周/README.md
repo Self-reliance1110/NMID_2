@@ -129,4 +129,11 @@ namespace="userMapper"
 * UNPOOLED:这个数据源的实现只是每次被请求时打开和关闭连接。
 * POOLED:这种数据源的实现利用“池”的概念将JDBC连接对象组织起来。
 * JNDI:这个数据源的实现是为了能在如EJB或应用服务器这类容器中使用，容器可以集中或在外部配置数据源，然后放置
--一个JNDI上下文的引用。
+一个JNDI上下文的引用。
+2. mapper标签
+该标签的作用是加载映射的，加载方式有如下几种: 
+* 使用相对于类路径的资源引用， 例如: <mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
+* 使用完全限定资源定位符(URL) ，例如: <mapper url= "file://var/mappers/AuthorMapper.xml"/>
+* 使用映射器接口实现类的完全限定类名，例如: <mapper class= " org.mybatis.builder.AuthorMapper"/>
+* 将包内的映射器接口实现全部注册为映射器， 例如: <package name= "org.mybatis.builder"/>
+
